@@ -222,7 +222,7 @@ is_routing_enabled() {
 # Check the input argument
 if $(bashio::config.true "client_internet_access"); then
     if is_routing_enabled; then
-        logger "## Routing is already enabled."
+        logger "## Routing is already enabled." 1
     else
         enable_routing
     fi
@@ -230,7 +230,7 @@ else
     if is_routing_enabled; then
         disable_routing
     else
-        logger "## Routing is already disabled."
+        logger "## Routing is already disabled." 1
     fi
 fi
 
