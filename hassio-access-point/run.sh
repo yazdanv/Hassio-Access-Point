@@ -220,19 +220,19 @@ is_routing_enabled() {
 }
 
 # Check the input argument
-if [ "$1" == "connect" ]; then
+if $(bashio::config.true "client_internet_access"); then
     if is_routing_enabled; then
         logger "## Routing is already enabled."
     else
         enable_routing
     fi
-elif [ "$1" == "disconnect" ]; then
+else
     if is_routing_enabled; then
         disable_routing
     else
         logger "## Routing is already disabled."
     fi
-else
+fi
 
 # Start dnsmasq if DHCP is enabled in config
 if $(bashio::config.true "dhcp"); then
