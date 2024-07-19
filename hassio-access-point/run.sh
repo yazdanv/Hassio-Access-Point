@@ -12,7 +12,7 @@ term_handler(){
 # Logging function to set verbosity of output to addon log
 logger(){
     msg=$1
-    level=$2
+    level=${2:-1}
     if [ $DEBUG -ge $level ]; then
         echo $msg
     fi
