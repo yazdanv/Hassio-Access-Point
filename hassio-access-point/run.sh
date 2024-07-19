@@ -201,13 +201,25 @@ else
 	logger "# DHCP not enabled. Skipping dnsmasq" 1
 fi
 
-# Setup Client Internet Access
-if $(bashio::config.true "client_internet_access"); then
-
-    ## Route traffic
+# Enable Routing Internet
+enable_routing() {
     iptables-nft -t nat -A POSTROUTING -o $DEFAULT_ROUTE_INTERFACE -j MASQUERADE
     iptables-nft -P FORWARD ACCEPT
     iptables-nft -F FORWARD
+}
+
+# Disable Routing Internet
+disable_routing() {
+    iptables-nft -t nat -D POSTROUTING -o $DEFAULT_ROUTE_INTERFACE -j MASQUERADE
+    iptables-nft -P FORWARD DROP
+    iptables-nft -F FORWARD
+}
+
+# Setup Client Internet Access
+if $(bashio::config.true "client_internet_access"); then
+    enable_routing
+else
+    disable_routing
 fi
 
 # Start dnsmasq if DHCP is enabled in config
