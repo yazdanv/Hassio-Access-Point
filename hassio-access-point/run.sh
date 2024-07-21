@@ -49,6 +49,7 @@ DENY_MAC_ADDRESSES=$(bashio::config 'deny_mac_addresses' )
 DEBUG=$(bashio::config 'debug' )
 HOSTAPD_CONFIG_OVERRIDE=$(bashio::config 'hostapd_config_override' )
 CLIENT_INTERNET_ACCESS=$(bashio::config.false 'client_internet_access'; echo $?)
+ALLOW_IP_ADDRESSES=$(bashio::config 'allow_ip_addresses' )
 CLIENT_DNS_OVERRIDE=$(bashio::config 'client_dns_override' )
 DNSMASQ_CONFIG_OVERRIDE=$(bashio::config 'dnsmasq_config_override' )
 
@@ -203,16 +204,26 @@ fi
 
 # Enable Routing Internet
 enable_routing() {
-    iptables-nft -t nat -A POSTROUTING -o $DEFAULT_ROUTE_INTERFACE -j MASQUERADE
-    iptables-nft -P FORWARD ACCEPT
+    iptables-nft -t nat -F POSTROUTING
     iptables-nft -F FORWARD
+
+    # Apply MASQUERADE rule for all allowed IPs
+    ALLOWED_IPS=($ALLOW_IP_ADDRESSES)
+    for ip in "${ALLOWED_IPS[@]}"; do
+        iptables-nft -t nat -A POSTROUTING -s $ip -o $DEFAULT_ROUTE_INTERFACE -j MASQUERADE
+        iptables-nft -A FORWARD -s $ip -o $DEFAULT_ROUTE_INTERFACE -j ACCEPT
+        iptables-nft -A FORWARD -d $ip -m state --state ESTABLISHED,RELATED -j ACCEPT
+    done
+
+    # Drop all other forwarding traffic by default
+    iptables-nft -P FORWARD DROP
 }
 
 # Disable Routing Internet
 disable_routing() {
-    iptables-nft -t nat -D POSTROUTING -o $DEFAULT_ROUTE_INTERFACE -j MASQUERADE
-    iptables-nft -P FORWARD DROP
+    iptables-nft -t nat -F POSTROUTING
     iptables-nft -F FORWARD
+    iptables-nft -P FORWARD DROP
 }
 
 is_routing_enabled() {
