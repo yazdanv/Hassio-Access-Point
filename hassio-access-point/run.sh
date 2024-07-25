@@ -219,6 +219,12 @@ enable_routing() {
     iptables-nft -P FORWARD DROP
 }
 
+enable_routing_for_all() {
+    iptables-nft -t nat -A POSTROUTING -o $DEFAULT_ROUTE_INTERFACE -j MASQUERADE
+    iptables-nft -P FORWARD ACCEPT
+    iptables-nft -F FORWARD
+}
+
 # Disable Routing Internet
 disable_routing() {
     iptables-nft -t nat -F POSTROUTING
@@ -232,11 +238,11 @@ is_routing_enabled() {
 
 # Check the input argument
 if $(bashio::config.true "client_internet_access"); then
-    if is_routing_enabled; then
-        logger "## Routing is already enabled." 1
-    else
-        enable_routing
-    fi
+	if $(bashio::config.true "internet_access_for_all"); then
+		enable_routing_for_all
+ 	else
+		enable_routing
+	fi
 else
     if is_routing_enabled; then
         disable_routing
