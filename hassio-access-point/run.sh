@@ -236,6 +236,8 @@ is_routing_enabled() {
     iptables-nft -t nat -C POSTROUTING -o $DEFAULT_ROUTE_INTERFACE -j MASQUERADE 2>/dev/null
 }
 
+disable_routing
+
 # Check the input argument
 if $(bashio::config.true "client_internet_access"); then
 	if $(bashio::config.true "internet_access_for_all"); then
@@ -243,12 +245,6 @@ if $(bashio::config.true "client_internet_access"); then
  	else
 		enable_routing
 	fi
-else
-    if is_routing_enabled; then
-        disable_routing
-    else
-        logger "## Routing is already disabled." 1
-    fi
 fi
 
 # Start dnsmasq if DHCP is enabled in config
