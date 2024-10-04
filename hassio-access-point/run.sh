@@ -236,7 +236,9 @@ is_routing_enabled() {
     iptables-nft -t nat -C POSTROUTING -o $DEFAULT_ROUTE_INTERFACE -j MASQUERADE 2>/dev/null
 }
 
-disable_routing
+if is_routing_enabled; then
+	disable_routing
+fi
 
 # Check the input argument
 if $(bashio::config.true "client_internet_access"); then
