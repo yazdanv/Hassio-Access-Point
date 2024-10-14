@@ -64,14 +64,6 @@
 			"name": "Enable Internet Access",
 			"description": "Whether to allow internet access for clients"
 		},
-		"internet_access_for_all": {
-			"name": "Internet Access for every Device",
-			"description": "Whether to allow internet access for all clients"
-		},
-		"allow_ip_addresses": {
-			"name": "Allow Internet to IP Adresses",
-			"description": "Only give internet access to these devices"
-		},
 		"client_dns_override": {
 			"name": "Client DNS ",
 			"description": "A list of DNS server IPs to use. If empty, will use Homeassistant's default DNS servers."
