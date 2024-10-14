@@ -12,7 +12,7 @@ term_handler(){
 # Logging function to set verbosity of output to addon log
 logger(){
     msg=$1
-    level=${2:-1}
+    level=$2
     if [ $DEBUG -ge $level ]; then
         echo $msg
     fi
@@ -49,7 +49,6 @@ DENY_MAC_ADDRESSES=$(bashio::config 'deny_mac_addresses' )
 DEBUG=$(bashio::config 'debug' )
 HOSTAPD_CONFIG_OVERRIDE=$(bashio::config 'hostapd_config_override' )
 CLIENT_INTERNET_ACCESS=$(bashio::config.false 'client_internet_access'; echo $?)
-ALLOW_IP_ADDRESSES=$(bashio::config 'allow_ip_addresses' )
 CLIENT_DNS_OVERRIDE=$(bashio::config 'client_dns_override' )
 DNSMASQ_CONFIG_OVERRIDE=$(bashio::config 'dnsmasq_config_override' )
 
@@ -202,51 +201,13 @@ else
 	logger "# DHCP not enabled. Skipping dnsmasq" 1
 fi
 
-# Enable Routing Internet
-enable_routing() {
-    iptables-nft -t nat -F POSTROUTING
-    iptables-nft -F FORWARD
+# Setup Client Internet Access
+if $(bashio::config.true "client_internet_access"); then
 
-    # Apply MASQUERADE rule for all allowed IPs
-    ALLOWED_IPS=($ALLOW_IP_ADDRESSES)
-    for ip in "${ALLOWED_IPS[@]}"; do
-        iptables-nft -t nat -A POSTROUTING -s $ip -o $DEFAULT_ROUTE_INTERFACE -j MASQUERADE
-        iptables-nft -A FORWARD -s $ip -o $DEFAULT_ROUTE_INTERFACE -j ACCEPT
-        iptables-nft -A FORWARD -d $ip -m state --state ESTABLISHED,RELATED -j ACCEPT
-    done
-
-    # Drop all other forwarding traffic by default
-    iptables-nft -P FORWARD DROP
-}
-
-enable_routing_for_all() {
+    ## Route traffic
     iptables-nft -t nat -A POSTROUTING -o $DEFAULT_ROUTE_INTERFACE -j MASQUERADE
     iptables-nft -P FORWARD ACCEPT
     iptables-nft -F FORWARD
-}
-
-# Disable Routing Internet
-disable_routing() {
-    iptables-nft -t nat -F POSTROUTING
-    iptables-nft -F FORWARD
-    iptables-nft -P FORWARD DROP
-}
-
-is_routing_enabled() {
-    iptables-nft -t nat -C POSTROUTING -o $DEFAULT_ROUTE_INTERFACE -j MASQUERADE 2>/dev/null
-}
-
-if is_routing_enabled; then
-	disable_routing
-fi
-
-# Check the input argument
-if $(bashio::config.true "client_internet_access"); then
-	if $(bashio::config.true "internet_access_for_all"); then
-		enable_routing_for_all
- 	else
-		enable_routing
-	fi
 fi
 
 # Start dnsmasq if DHCP is enabled in config
